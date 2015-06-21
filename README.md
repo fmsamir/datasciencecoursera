@@ -35,6 +35,9 @@ The test and train datasets were then merged to form a single dataset containing
 The subject and activity variables were manually given the names "Subject" and "Activity" respectively.
 The "features.txt" file was used to create the variables names for the remainder of the dataset, by extracting the file's second column and assigning the elements to be the column names.
 These names briefly and aptly describe the measurement denoted by each variable, and a full description is given in the codebook included in this project's portfolio.
+<br>
+<br>
+A typing error which includes the string "Body" in some variable names twice, such as "fBodyBodyAccJerkMag-mean()" was left unaltered for the sake of consistency with the original dataset.
 
 ## Selecting Variables
 The dataset was then modified to only include variables pertaining to the means and standard deviations of the measurements.
