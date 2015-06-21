@@ -54,10 +54,10 @@ To do so, the "activity_labels.txt" file was used to match each number with the 
 The activity column was then mutated from one of numbers to one of names.
 
 ## Aggregating Means
-The dataset was first arranged in order of increasing subject number and by alphabetical activty name order.
+The dataset was first arranged in order of increasing subject number and by alphabetical activity name order.
 Then, the dataset was grouped by subject and by activity.
 A function was then applied to the dataset to find the mean of each variable per activity per subject.
-The result is a dataset consisting of 180 observations, containing the means of each variable for each of the 6 activites as performed by each of the 30 subjects.
+The result is a dataset consisting of 180 observations, containing the means of each variable for each of the 6 activities as performed by each of the 30 subjects.
 
 ## Adherence to Tidy Data Principles
 The dataset created is in compliance with the tidy data principles as proposed by Hadley Wickham in his paper, found at <a href="http://vita.had.co.nz/papers/tidy-data.pdf">this link</a>.
