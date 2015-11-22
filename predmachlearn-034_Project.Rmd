@@ -1,0 +1,126 @@
+---
+title: "Predicting Activity Type Using Training Device Data"
+author: "Faisal Samir"
+date: "November 22, 2015"
+output: html_document
+---
+
+# Introduction
+
+The goal of this project is to examine human activity recognition data, fit a model to the data, and use the model to predict the manner in which 20 exercises were performed. The data provided comes from [this website](http://groupware.les.inf.puc-rio.br/har) under the "Weight Lifting Exercises Dataset" section. The data was collected from 6 participants performing exercises using accelerometers on the belt, forearm, arm, and dumbbell. The activities were performed correctly and incorrectly and labeled A-E, which denote performing exactly according to the specification, throwing the elbows to the front, lifting the dumbbell only halfway, lowering the dumbbell only halfway, and throwing the hips to the front respectively.
+
+<br>
+
+# Examining and Cleaning the Data
+
+The first step is to obtain the data sets. The data consists of a training set with almost all of the observations and an additional testing set with 20 observations with missing activity type data. The data sets can be downloaded and then read into R as follows.
+
+```{r}
+if (!file.exists("pml-training.csv")) 
+    {download.file("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv", 
+                   "pml-training.csv", method = "curl")}
+if (!file.exists("pml-testing.csv")) 
+    {download.file("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv", 
+                   "pml-testing.csv", method = "curl")}
+pmltraining <- read.csv("pml-training.csv")
+pmltesting <- read.csv("pml-testing.csv")
+```
+
+<br>
+
+Our analysis will now be entirely focused on the training set until the predictions are to be made. Let us take a look at the dimensions and basic features of the training data set. Since there are 160 variables as seen below, a summary of only the first 25 variables and the `classe` variable, which represents activity type, are shown.
+
+```{r}
+dim(pmltraining)
+summary(pmltraining[, c(1:25, 160)])
+```
+
+<br>
+
+The first 7 variables including participant names, dates, etc. should have no effect on the activity type performed, and so are removed to simplify model building.
+
+```{r}
+factorlesstraining <- pmltraining[, -(1:7)]
+```
+
+<br>
+
+As can be seen in the summary, there appears to be an overwhelmingly large number of missing values in some of the variable types. These variables will likely have a negative effect on the model, and so they are removed as shown below.
+
+```{r}
+naIndex <- which(sapply(factorlesstraining, function(x) sum(is.na(x)) > 0))
+nalesstraining <- factorlesstraining[, -naIndex]
+```
+
+<br>
+
+Now we use the `caret` package to determine which variables have near zero variance, or variables with the same value in almost all observations. These variables may also negatively affect our model, and so we exclude them.
+
+```{r}
+library(caret)
+nzvIndex <- nearZeroVar(nalesstraining)
+nzvlesstraining <- nalesstraining[, -nzvIndex]
+```
+
+<br>
+
+We now take a quite look at the data.
+
+```{r}
+str(nzvlesstraining)
+```
+
+<br>
+
+We see that we've effectively cut down our model to 52 variables consisting entirely of data from the accelerometers without missing values and with considerable variance, as well as the `classe` variable. Our data set is now sufficiently clean and ready for model building.
+
+<br>
+
+# Building the Model
+
+Before using R to fit the model, we first perform cross validation by splitting the clean training set into training and testing subsets. The resulting training subset will be used to build the model, while the testing subset will be used to test the model's accuracy so as to be have an estimate of our predictions' correctness. The data set is split into roughly 60% training and 40% testing so as to have enough data to both accurately build the model and reasonably estimate its accuracy. The seed is set for the sake of research reproducibility.
+
+```{r}
+set.seed(1024)
+trainIndex <- createDataPartition(y = nzvlesstraining$classe, p = 0.6, list = FALSE)
+train <- nzvlesstraining[trainIndex, ]
+test <- nzvlesstraining[-trainIndex, ]
+```
+
+<br>
+
+We now use the `train` function in the `caret` package to fit a random forest model to the data. The random forest method is selected due to its high accuracy and the non-linear nature of the data. Some preprocessing is done in the form of centering and scaling the data, to reduce the effect of high variability of some of the variables. In addition to the previous subsetting of the training set, 5-fold cross validation is performed to build the model. 5 folds are selected as a compromise between bias and variance of the model, as well as to expedite computation. We set the seed again so as to ensure reproducibility of the model.
+
+```{r, cache = TRUE}
+library(randomForest)
+set.seed(1024)
+model <- train(classe ~ ., data = train, method = "rf", 
+               preProcess = c("center", "scale"), trControl = trainControl(method = "cv", number = 5))
+```
+
+
+<br>
+
+#Estimating Error and Predicting Test Cases
+
+In order to have an idea of how accurate our model is, we compare the testing subset cases to the predictions produced by our model for the testing subset. The `confusionMatrix` function accomplishes this task as shown below.
+
+```{r}
+confusionMatrix(test$classe, predict(model, test))
+```
+
+<br>
+
+We see that the model's accuracy is thus 99.01%, and so we expect the out-of-sample error for our predictions to be 0.99%. We now apply the model to the original testing set to predict the activity types of each of the 20 cases. The results are omitted due to the delayed assignment deadline of the submission phase on Coursera.
+
+```{r, results = "hide"}
+predict(model, pmltesting)
+```
+
+<br>
+
+### Citation
+
+Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13) . Stuttgart, Germany: ACM SIGCHI, 2013.
+
+Read more: http://groupware.les.inf.puc-rio.br/har#ixzz3sFilmjiU
